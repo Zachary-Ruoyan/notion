@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Auto Proportion Tool (3600mm Start)</title>
+    <style>
+        :root {
+            --bg-color: #f4f5f7;
+            --card-bg: #ffffff;
+            --accent: #0066FF;
+            --text-main: #171717;
+            --text-sub: #888888;
+            --line-color: #171717;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+            width: 1000px;
+            max-width: 95%;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .controls {
+            display: flex;
+            background: #F0F2F5;
+            padding: 4px;
+            border-radius: 12px;
+            gap: 4px;
+        }
+
+        button {
+            border: none;
+            background: transparent;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-sub);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            color: var(--text-main);
+        }
+
+        button.active {
+            background: var(--card-bg);
+            color: var(--text-main);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .canvas-area {
+            position: relative;
+            background: #FAFAFA;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #EEEEEE;
+        }
+
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* 交互样式 */
+        .draggable {
+            cursor: ew-resize;
+            transition: opacity 0.2s;
+        }
+        
+        .draggable circle.hit-area {
+            fill: transparent;
+        }
+        
+        .draggable:hover circle.hit-area {
+            fill: rgba(0, 102, 255, 0.05);
+        }
+        
+        .draggable:active circle.hit-area {
+            fill: rgba(0, 102, 255, 0.1);
+            cursor: grabbing;
+        }
+
+        .dimension-line { stroke: var(--accent); stroke-width: 1.5; }
+        .dimension-text { fill: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; text-anchor: middle; }
+        .hint { margin-top: 15px; text-align: center; font-size: 12px; color: var(--text-sub); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Proportion Studio</h1>
+        <div class="controls">
+            <button onclick="setType('sedan')" id="btn-sedan" class="active">Sedan</button>
+            <button onclick="setType('hatchback')" id="btn-hatchback">Hatchback</button>
+            <button onclick="setType('suv')" id="btn-suv">SUV</button>
+            <button onclick="setType('mpv')" id="btn-mpv">MPV</button>
+        </div>
+    </header>
+
+    <div class="canvas-area">
+        <svg width="920" height="500" viewBox="0 0 920 500" id="canvas" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <circle cx="2" cy="2" r="1" fill="#E5E5E5"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+            <line x1="50" y1="400" x2="870" y2="400" stroke="#DDDDDD" stroke-width="2" stroke-linecap="round"/>
+
+            <g id="car-assembly">
+                <path id="body" fill="#FFFFFF" stroke="#171717" stroke-width="2.5" stroke-linejoin="round"/>
+                <path id="cabin" fill="#222222" stroke="#171717" stroke-width="2.5" stroke-linejoin="round"/>
+
+                <g id="wheel-front">
+                    <circle r="36" fill="#F0F0F0" stroke="#171717" stroke-width="2.5"/>
+                    <circle r="25" fill="none" stroke="#171717" stroke-width="1.5"/>
+                    <circle r="4" fill="#171717"/>
+                </g>
+
+                <g id="wheel-rear" class="draggable">
+                    <circle class="hit-area" r="80" />
+                    <circle r="36" fill="#F0F0F0" stroke="#171717" stroke-width="2.5"/>
+                    <circle r="25" fill="none" stroke="#171717" stroke-width="1.5"/>
+                    <circle r="4" fill="#171717"/>
+                    <g transform="translate(0, 55)" opacity="0.5">
+                        <path d="M-10 0 L10 0 M-6 -4 L-10 0 L-6 4 M6 -4 L10 0 L6 4" stroke="#0066FF" stroke-width="2"/>
+                    </g>
+                </g>
+
+                <g id="dimensions">
+                    <line id="dim-line" y1="440" y2="440" class="dimension-line"/>
+                    <line id="dim-start" y1="435" y2="445" class="dimension-line"/>
+                    <line id="dim-end" y1="435" y2="445" class="dimension-line"/>
+                    <text id="dim-text" y="460" class="dimension-text">3600 mm</text>
+                </g>
+            </g>
+        </svg>
+    </div>
+    <div class="hint">DRAG REAR WHEEL TO ADJUST WHEELBASE</div>
+</div>
+
+<script>
+    const configs = {
+        sedan: {
+            wheelR: 36,          
+            clearance: 25,       
+            bodyH: 52,           
+            cabinH: 30,          
+            fOver: 45,           
+            rOver: 90,           
+            noseH: 10,           
+            trunkH: 5,           
+            
+            dashToAxle: 21,      
+            rearDeck: 25,        
+            
+            windshieldX: 65,     
+            rearWindowX: 60,     
+            roofCurve: 5
+        },
+        hatchback: {
+            wheelR: 35,
+            clearance: 25,
+            bodyH: 55,           
+            cabinH: 36,
+            fOver: 40,           
+            rOver: 45,           
+            noseH: 10,           
+            trunkH: 0,
+            
+            dashToAxle: 0,      
+            rearDeck: 10,        
+            
+            windshieldX: 55,
+            rearWindowX: 20,     
+            roofCurve: 3
+        },
+        suv: {
+            wheelR: 38,          
+            clearance: 40,       
+            bodyH: 78,
+            cabinH: 42,          
+            fOver: 45,           
+            rOver: 75,
+            noseH: 10,            
+            trunkH: 0,           
+            
+            dashToAxle: 20,      
+            rearDeck: 15,        
+            
+            windshieldX: 50,
+            rearWindowX: 35,
+            roofCurve: 0
+        },
+        mpv: {
+            wheelR: 36,
+            clearance: 30,
+            bodyH: 65,           
+            cabinH: 42,          
+            fOver: 40,           
+            rOver: 70,
+            
+            noseH: 0,            
+            trunkH: 0,
+            
+            dashToAxle: -75, 
+            rearDeck: 0,        
+            
+            windshieldX: 100,    
+            rearWindowX: 60,     
+            roofCurve: 10        
+        }
+    };
+
+    let state = {
+        type: 'sedan',
+        fwX: 200,          
+        rwX: 520,          
+        groundY: 400,      
+        
+        // 修改点：比例系数调整为 11.25
+        // (520 - 200) * 11.25 = 3600
+        scale: 11.25         
+    };
+
+    const svg = document.getElementById('canvas');
+    const rwGroup = document.getElementById('wheel-rear');
+
+    function render() {
+        const cfg = configs[state.type];
+        const r = cfg.wheelR;
+        const wheelY = state.groundY - r;
+        
+        // 1. Update Wheels
+        const updateWheel = (id, x) => {
+            const g = document.getElementById(id);
+            g.setAttribute('transform', `translate(${x}, ${wheelY})`);
+            const circles = g.querySelectorAll('circle');
+            if (id === 'wheel-front') {
+                circles[0].setAttribute('r', r);
+                circles[1].setAttribute('r', r * 0.7);
+            } else {
+                circles[1].setAttribute('r', r);
+                circles[2].setAttribute('r', r * 0.7);
+            }
+        };
+        updateWheel('wheel-front', state.fwX);
+        updateWheel('wheel-rear', state.rwX);
+
+        // 2. Coordinates
+        const rockerY = state.groundY - cfg.clearance;
+        const beltY = wheelY - cfg.bodyH;
+        const roofY = beltY - cfg.cabinH;
+        
+        const noseX = state.fwX - cfg.fOver;
+        const tailX = state.rwX + cfg.rOver;
+        
+        // 轮拱布尔切角
+        const archR = r * 1.15;
+        const archDy = rockerY - wheelY;
+        const archDx = Math.sqrt(archR*archR - archDy*archDy) || archR;
+
+        // 3. Draw Body
+        let bodyPath = `
+            M ${noseX} ${beltY + cfg.noseH}
+            L ${noseX} ${rockerY}
+            L ${state.fwX - archDx} ${rockerY}
+            A ${archR} ${archR} 0 0 1 ${state.fwX + archDx} ${rockerY} 
+            L ${state.rwX - archDx} ${rockerY}
+            A ${archR} ${archR} 0 0 1 ${state.rwX + archDx} ${rockerY}
+            L ${tailX} ${rockerY}
+            L ${tailX} ${beltY + cfg.trunkH}
+            L ${state.rwX + 30} ${beltY} 
+            L ${state.fwX} ${beltY}
+            Z
+        `;
+
+        // 4. Draw Cabin
+        
+        // A柱起点 (Cowl Point)
+        const cowlX = state.fwX + r + (cfg.dashToAxle || 0); 
+        
+        // C柱终点
+        const cPillarX = tailX - (cfg.rearDeck || 0);
+
+        // Cabin Top Points
+        const roofStartX = cowlX + cfg.windshieldX;
+        const roofEndX = cPillarX - cfg.rearWindowX;
+
+        let cabinPath = `
+            M ${cowlX} ${beltY}
+            L ${roofStartX} ${roofY}
+            Q ${(roofStartX + roofEndX)/2} ${roofY - cfg.roofCurve} ${roofEndX} ${roofY}
+            L ${cPillarX} ${beltY}
+            Z
+        `;
+
+        document.getElementById('body').setAttribute('d', bodyPath);
+        document.getElementById('cabin').setAttribute('d', cabinPath);
+
+        // 5. Dimension
+        const wheelbaseMm = Math.round((state.rwX - state.fwX) * state.scale);
+        const dimY = state.groundY + 40;
+        const dimLine = document.getElementById('dim-line');
+        const dimText = document.getElementById('dim-text');
+        
+        dimLine.setAttribute('x1', state.fwX);
+        dimLine.setAttribute('x2', state.rwX);
+        dimLine.setAttribute('y1', dimY);
+        dimLine.setAttribute('y2', dimY);
+        
+        document.getElementById('dim-start').setAttribute('x1', state.fwX);
+        document.getElementById('dim-start').setAttribute('x2', state.fwX);
+        document.getElementById('dim-end').setAttribute('x1', state.rwX);
+        document.getElementById('dim-end').setAttribute('x2', state.rwX);
+        
+        dimText.setAttribute('x', state.fwX + (state.rwX - state.fwX)/2);
+        dimText.textContent = `${wheelbaseMm} mm`;
+    }
+
+    // --- Interaction ---
+    let isDragging = false;
+    rwGroup.addEventListener('mousedown', () => { isDragging = true; rwGroup.style.cursor = 'grabbing'; });
+    window.addEventListener('mouseup', () => { isDragging = false; rwGroup.style.cursor = 'ew-resize'; });
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const ctm = svg.getScreenCTM();
+        let x = (e.clientX - ctm.e) / ctm.a;
+        if (x < state.fwX + 220) x = state.fwX + 220;
+        if (x > state.fwX + 600) x = state.fwX + 600;
+        state.rwX = x;
+        render();
+    });
+
+    window.setType = (type) => {
+        state.type = type;
+        document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + type).classList.add('active');
+        render();
+    };
+
+    render();
+</script>
+</body>
+</html>
